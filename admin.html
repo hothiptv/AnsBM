@@ -1,18 +1,21 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>AnsBM - ADMIN PANEL</title>
+    <title>AnsBM Admin</title>
     <style>
-        body { background: #0d1117; color: #58a6ff; font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; height: 100vh; }
-        #side { width: 300px; border-right: 1px solid #30363d; padding: 20px; background: #161b22; }
-        #main { flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 15px; }
-        .file-btn { padding: 12px; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; cursor: pointer; margin-bottom: 5px; border-radius: 6px; text-align: left; }
-        .file-btn:hover { border-color: #58a6ff; }
-        textarea { flex: 1; background: #0d1117; color: #00ff96; border: 1px solid #30363d; padding: 15px; font-family: 'Consolas', monospace; border-radius: 8px; font-size: 14px; }
-        input { background: #0d1117; color: white; border: 1px solid #30363d; padding: 12px; border-radius: 6px; }
-        button#save { background: #238636; color: white; border: none; padding: 15px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        button#raw { background: #1f6feb; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; display: none; }
+        body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; display: flex; margin: 0; height: 100vh; }
+        #side { width: 280px; border-right: 1px solid #30363d; padding: 20px; background: #161b22; }
+        #main { flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 10px; }
+        .file-item { padding: 12px; background: #21262d; border: 1px solid #30363d; margin-bottom: 8px; cursor: pointer; border-radius: 6px; display: flex; justify-content: space-between; }
+        .file-item:hover { border-color: #58a6ff; }
+        textarea { flex: 1; background: #0d1117; color: #7ee787; border: 1px solid #30363d; padding: 15px; border-radius: 8px; font-family: monospace; }
+        input { background: #0d1117; color: white; border: 1px solid #30363d; padding: 10px; border-radius: 6px; }
+        .btn-group { display: flex; gap: 10px; }
+        button { padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; }
+        #save { background: #238636; color: white; }
+        #del { background: #da3633; color: white; display: none; }
+        #copy { background: #1f6feb; color: white; display: none; }
     </style>
 </head>
 <body>
@@ -21,54 +24,63 @@
         <div id="list"></div>
     </div>
     <div id="main">
-        <input type="text" id="name" placeholder="Tên tệp (ví dụ: EvadeScript)">
-        <textarea id="code" placeholder="Dán mã script vào đây..."></textarea>
-        <button id="save" onclick="save()">LƯU VÀ ĐỒNG BỘ GITHUB</button>
-        <button id="raw" onclick="copyRaw()">COPY LINK RAW</button>
-        <p id="status"></p>
+        <input type="text" id="name" placeholder="Tên tệp...">
+        <textarea id="code" placeholder="Dán script..."></textarea>
+        <div class="btn-group">
+            <button id="save" onclick="handleFile(false)">LƯU DỮ LIỆU</button>
+            <button id="del" onclick="handleFile(true)">XÓA TỆP</button>
+            <button id="copy" onclick="copyL()">COPY RAW LINK</button>
+        </div>
+        <p id="msg"></p>
     </div>
 
     <script>
+        const pass = window.location.pathname.replace('/','');
         async function load() {
             const res = await fetch('/api/files');
             const data = await res.json();
             const list = document.getElementById('list');
             list.innerHTML = "";
             for (let n in data) {
-                let b = document.createElement('div');
-                b.className = 'file-btn';
-                b.innerText = "📄 " + n;
-                b.onclick = () => {
+                let div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `<span>📄 ${n}</span>`;
+                div.onclick = () => {
                     document.getElementById('name').value = n;
                     document.getElementById('code').value = data[n];
-                    document.getElementById('raw').style.display = "block";
+                    document.getElementById('del').style.display = "block";
+                    document.getElementById('copy').style.display = "block";
                 };
-                list.appendChild(b);
+                list.appendChild(div);
             }
+        }
+        async function handleFile(isDelete) {
+            const name = document.getElementById('name').value;
+            const content = document.getElementById('code').value;
+            if(!name) return;
+            if(isDelete && !confirm("Xóa file này?")) return;
+            
+            document.getElementById('msg').innerText = "Đang xử lý...";
+            await fetch('/api/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, content, isDelete })
+            });
+            document.getElementById('msg').innerText = isDelete ? "Đã xóa!" : "Đã lưu!";
+            if(isDelete) newF();
+            load();
         }
         function newF() {
             document.getElementById('name').value = "";
             document.getElementById('code').value = "";
-            document.getElementById('raw').style.display = "none";
+            document.getElementById('del').style.display = "none";
+            document.getElementById('copy').style.display = "none";
         }
-        async function save() {
-            const name = document.getElementById('name').value;
-            const content = document.getElementById('code').value;
-            if(!name) return alert("Nhập tên file!");
-            document.getElementById('status').innerText = "Đang lưu...";
-            await fetch('/api/save', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name, content})
-            });
-            document.getElementById('status').innerText = "Đã lưu vĩnh viễn!";
-            load();
-        }
-        function copyRaw() {
+        function copyL() {
             const n = document.getElementById('name').value;
-            const link = window.location.origin + "/raw/" + n;
+            const link = `${window.location.origin}/raw/${n}/${pass}`;
             navigator.clipboard.writeText(link);
-            alert("Đã copy link raw bảo mật!");
+            alert("Đã copy link bảo mật!");
         }
         load();
     </script>
