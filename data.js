@@ -16,11 +16,11 @@
       "passwordHash": "ad09",
       "pin": "00000",
       "level": 1,
-      "exp": 0,
-      "coins": 1000,
+      "exp": 10,
+      "coins": 1100,
       "tickets": 5,
       "luck": 10,
-      "lastSaved": "2026-05-15T06:09:40.604Z"
+      "lastSaved": "2026-05-15T06:09:44.242Z"
     }
   ]
 }
