@@ -15,7 +15,7 @@
       "username": "khánh",
       "passwordHash": "khanh",
       "pin": "12345",
-      "level": 1,
+      "level": 999,
       "exp": 0,
       "coins": 0,
       "tickets": 5,
